@@ -1,0 +1,166 @@
+import pandas as pd
+import sqlalchemy
+import csv
+import requests
+from bs4 import BeautifulSoup
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import MetaData, Table
+from sqlalchemy.orm import mapper
+import re
+import unidecode
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+
+
+######### Input #########
+dump_database = "static/database_01.db"
+#########################
+
+
+class Mairies():
+    pass
+
+
+engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
+metadata = MetaData(engine)
+mairies = Table('mairies', metadata, autoload=True)
+mapper(Mairies, mairies)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+
+def data_frame(query, columns):
+    """
+    Takes a sqlalchemy query and a list of columns, returns a dataframe.
+    """
+    def make_row(x):
+        return dict([(c, getattr(x, c)) for c in columns])
+    return pd.DataFrame([make_row(x) for x in query])
+
+
+# dataframe with all fields in the table
+query = session.query(Mairies).all()
+df = data_frame(query,
+                ["insee_code",
+                 "postal_code",
+                 "city",
+                 "population",
+                 "latitude",
+                 "longitude",
+                 "last_name",
+                 "first_name",
+                 "birthdate",
+                 "first_mandate_date",
+                 "party"])
+df["population"] = df["population"].apply(pd.to_numeric)
+
+
+def city_map():
+    Y = df.as_matrix(columns=df.columns[6:8])[:, 0]
+    X = df.as_matrix(columns=df.columns[6:8])[:, 1]
+
+    A = []
+    for y in Y:
+        if y == "None":
+            A.append(-np.cos(48.8 * np.pi / 180))
+        else:
+            y = float(y)
+            y = np.cos(y * np.pi / 180)
+            A.append(-y)
+
+    B = []
+    for x in X:
+        if x == "None":
+            B.append(np.sin(2.02 * np.pi / 180))
+        else:
+            x = float(x)
+            x = np.sin(x * np.pi / 180)
+            B.append(x)
+
+    plt.plot(B, A, ".")
+    plt.show()
+
+
+def pop_per_party(range):
+    # population under each party
+    pop = df.loc[:, ['population', 'party', 'city']]
+    pop = pop[pop.population >= range[0]][pop.population <=
+                                          range[1]].groupby("party").sum().sort_values("population")
+    total_pop = pop['population'].sum()
+    pop["percentage"] = pop["population"].apply(lambda x: x / total_pop * 100)
+    print(pop)
+
+
+color = dict()
+color['PCF'] = "#800000"
+color['FG'] = "#800000"
+color['PS'] = "#FF0000"
+color['DVG'] = "#FF6564"
+color['PRG'] = "#F79295"
+color['EELV'] = "#1DCD40"
+color['MoDem'] = "#9F66C2"
+color['UDI'] = "#9F66C2"
+color['DVD'] = "#9EA0FF"
+color['UMP-LR'] = "#0000FF"
+color['FN'] = "#000080"
+color['NA'] = "#000000"
+color['SE'] = "#E8ECC1"
+
+def party_vs_citysize(df):
+    Sizes = [
+        0,
+        200,
+        600,
+        1000,
+        5000,
+        10000,
+        30000,
+        70000,
+        100000,
+        300000,
+        1000000,
+        2000000]
+    Parties = ["UMP-LR", "PS", "DVD", "NA", "DVG", "SE"]
+    colors = [color[p] for p in Parties]
+    n = len(Sizes)
+    A = []
+    df_pop = df.loc[:, ['population', 'party']]
+    for k in range(0,len(Sizes)-1):
+        L = []
+        total_pop = df_pop['population'][df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]].sum()
+        for p in Parties:
+            n_pop = df_pop[df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]][df_pop.party == p]
+            n_pop = n_pop['population'].sum() / total_pop * 100
+            L.append(n_pop)
+        A.append(L)
+    """
+    df_pop = df.loc[:, ['city', 'party','population']]
+    for k in range(0,len(Sizes)-1):
+        L = []
+        total_mairies = df_pop['city'][df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]].count()
+        for p in Parties:
+            n_pop = df_pop[df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]][df_pop.party == p]
+            n_pop = n_pop['city'].count() / total_mairies * 100
+            L.append(n_pop)
+        A.append(L)
+    """
+    df = pd.DataFrame(A, index=Sizes[:-1], columns=Parties)
+    df.plot.bar(color=colors)
+    plt.xticks(rotation=0)
+    plt.title("Parties VS city size")
+    plt.xlabel("taille des villes")
+    plt.ylabel("pourcentage de la population par parti")
+    plt.show()
+
+
+#----- main -----#
+population_threshold = [0, 1000000]
+# city_map()
+#pop_per_party(population_threshold)
+party_vs_citysize(df)
