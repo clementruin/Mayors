@@ -33,9 +33,11 @@ def main():
 	            self.insee_code, self.postal_code, self.city, self.population, self.latitude, self.longitude, self.first_name, self.last_name, self.birthdate, self.first_mandate_date, self.party)
 
 	session.commit()
+	Base.metadata.drop_all(engine)  #clear existing rows from previous runs
 	Base.metadata.create_all(engine)
 
 	# Create a .csv file in /export/
 	new_file2 = open('export/database.csv', 'w')
+	new_file2.close()
 
 main()
