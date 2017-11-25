@@ -19,7 +19,7 @@ import math
 
 
 ######### Input #########
-dump_database = "static/database_01.db"
+dump_database = "static/database.db"
 #########################
 
 color = dict()
@@ -39,13 +39,27 @@ color['SE'] = "#E8ECC1"
 
 
 class Mairies():
-    pass
+    __tablename__ = 'mairies'
+    __table_args__ = {'autoload':True}
+
+    def __init__(self, insee_code, postal_code, city, population, latitude, longitude, first_name, last_name, birthdate, first_mandate_date, party):
+        self.insee_code = insee_code
+        self.postal_code = postal_code
+        self.city = city
+        self.population = population
+        self.latitude = latitude
+        self.longitude = longitude
+        self.first_name = first_name
+        self.last_name = last_name
+        self.birthdate = birthdate
+        self.first_mandate_date = first_mandate_date
+        self.party = party
 
 
 engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
 metadata = MetaData(engine)
 mairies = Table('mairies', metadata, autoload=True)
-mapper(Mairies, mairies)
+mapper(Mairies,mairies)
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -59,20 +73,22 @@ def data_frame(query, columns):
 
 
 # dataframe with all fields in the table
-query = session.query(Mairies).all()
-df = data_frame(query,
-                ["insee_code",
-                 "postal_code",
-                 "city",
-                 "population",
-                 "latitude",
-                 "longitude",
-                 "last_name",
-                 "first_name",
-                 "birthdate",
-                 "first_mandate_date",
-                 "party"])
-df["population"] = df["population"].apply(pd.to_numeric)
+def builder():
+    query = session.query(Mairies).all()
+    print(query)
+    df = data_frame(query,
+                    ["insee_code",
+                     "postal_code",
+                     "city",
+                     "population",
+                     "latitude",
+                     "longitude",
+                     "last_name",
+                     "first_name",
+                     "birthdate",
+                     "first_mandate_date",
+                     "party"])
+    df["population"] = df["population"].apply(pd.to_numeric)
 
 
 def pop_per_party(range):
@@ -163,4 +179,5 @@ def party_vs_citysize2(df):
 #party_vs_citysize1(df)
 
 def main(arg):
+    builder()
     print("analyse")

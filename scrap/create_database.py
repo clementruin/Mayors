@@ -6,6 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Date
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import MetaData, Table
+from sqlalchemy.orm import mapper
 import unidecode
 import re
 from fuzzywuzzy import fuzz
@@ -13,39 +15,42 @@ from fuzzywuzzy import process
 
 
 ######### Input #########
-source_database = "static/insee_01.csv"
-dump_database = "static/database_01.db"
-dump_database_csv = "static/database_01.csv"
+source_database = "static/insee.csv"
+dump_database = "static/database.db"
+dump_database_csv = "export/database.csv"
 #########################
 
-# Create table "Mairies" 
+
+# Retrieve table "mairies"
+
+class Mairies():
+    __tablename__ = 'mairies'
+    __table_args__ = {'autoload':True}
+
+    def __init__(self, insee_code, postal_code, city, population, latitude, longitude, first_name, last_name, birthdate, first_mandate_date, party):
+        self.insee_code = insee_code
+        self.postal_code = postal_code
+        self.city = city
+        self.population = population
+        self.latitude = latitude
+        self.longitude = longitude
+        self.first_name = first_name
+        self.last_name = last_name
+        self.birthdate = birthdate
+        self.first_mandate_date = first_mandate_date
+        self.party = party
+
 
 engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
-Base = declarative_base()
+metadata = MetaData(engine)
+mairies = Table('mairies', metadata, autoload=True)
+mapper(Mairies,mairies)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
 class TableError(Exception):
     pass
-
-class Mairies(Base):
-    __tablename__ = 'mairies'
-    insee_code = Column(String, primary_key=True)
-    postal_code = Column(Integer)
-    city = Column(String)
-    population = Column(Integer)
-    latitude = Column(String)
-    longitude = Column(String)
-    first_name = Column(String)
-    last_name = Column(String)
-    birthdate = Column(String)
-    first_mandate_date = Column(String)
-    party = Column(String)
-
-    def __repr__(self):
-        return "<Mairies(insee_code='%s', postal_code='%s', city='%s', population='%s',latitude='%s', longitude='%s', first_name='%s', last_name='%s', birthdate='%s', first_mandate_date='%s', party='%s')>" % (
-            self.insee_code, self.postal_code, self.city, self.population, self.latitude, self.longitude, self.first_name, self.last_name, self.birthdate, self.first_mandate_date, self.party)
 
 # Link insee_code with postal_code and coordinates 
 
@@ -78,7 +83,7 @@ def no_accent(string):
 
 # Populate table 
 
-def build_db():
+def build_db(user_arg, user_argtype):
     """Retrieves data from the source_database and scraping function. 
     Creates rows in the Mairies table 
     """
@@ -86,27 +91,38 @@ def build_db():
     reader = csv.DictReader(outfile, delimiter=';')
     for line in reader:
         get = get_dict(line["codeinsee"])
-        scrap = scrap_party_date(
-            get[0],
-            line["libsubcom"],
-            line["prepsn"],
-            line["nompsn"])
-        print(line["codeinsee"])
-        new_mayor = Mairies(
-            insee_code= line["codeinsee"],
-            postal_code=get[0],
-            city=line["libsubcom"],
-            population=int(line["popsubcom"]),
-            latitude=get[1],
-            longitude=get[2],
-            first_name=line["prepsn"],
-            last_name=line["nompsn"],
-            birthdate=line["naissance"],
-            first_mandate_date=scrap[0],
-            party=scrap[1])
-        session.merge(new_mayor)
+        if useful_line(get[0], line["libsubcom"], user_arg, user_argtype):
+            scrap = scrap_party_date(
+                get[0],
+                line["libsubcom"],
+                line["prepsn"],
+                line["nompsn"])
+            print(line["codeinsee"])
+            new_mayor = Mairies(insee_code= line["codeinsee"],
+                postal_code=get[0],
+                city=line["libsubcom"],
+                population=int(line["popsubcom"]),
+                latitude=get[1],longitude=get[2],
+                first_name=line["prepsn"],
+                last_name=line["nompsn"],
+                birthdate=line["naissance"],
+                first_mandate_date=scrap[0],
+                party=scrap[1])
+            session.merge(new_mayor)
     session.commit()
     outfile.close()
+
+
+def useful_line(postal_code, city, user_arg, user_argtype):
+    """Check whether this city was requested by the user by comparing
+    with user_arg and user_argtype
+    """
+    if user_argtype == 'dpt':
+        return user_arg == postal_code[:-3]
+    elif user_argtype == 'postal_code':
+        return user_arg == postal_code
+    else :
+        return user_arg == city
 
 
 def scrap_party_date(postal_code, city, first_name, last_name):
@@ -224,7 +240,7 @@ def write_csv():
     records = session.query(Mairies).all()
     session.commit()
     [outcsv.writerow([getattr(curr, column.name)
-                      for column in Mairies.__mapper__.columns]) for curr in records]
+                      for column in mairies.columns]) for curr in records]
     outfile.close()
 
 # Correction for cities with undefined party
@@ -251,19 +267,38 @@ def party_correction(insee_code, city):
         return "NA"
 
 def correct():
-    rows = session.query(Mairies).filter(Mairies.party == "NA").filter(Mairies.population<1000000).filter(Mairies.population>0).all()
-    for row in rows :
-        row.party = clean_party_attribute(party_correction(row.insee_code, row.city))
-        #print(row.city, row.party, row.population)
+    rows = session.query(Mairies).filter(Mairies.party == "NA").all()
+    count = session.query(Mairies).filter(Mairies.party == "NA").count()
+    print("{} cities with undefined party".format(count))
+    while count>0:
+        answer = input("Do you want to try a potentially long correction? (yes/no) : ")
+        try:
+            if valid_answer(answer):
+                for row in rows :
+                    row.party = clean_party_attribute(party_correction(row.insee_code, row.city))
+                    print(row.city, row.party, row.population)
+            break
+        except Illegal:
+            print("illegal, answer yes or no")
     session.commit()
 
 
-Base.metadata.create_all(engine)
+def valid_answer(string):
+    if string == "yes":
+        return True
+    elif string == "no":
+        return False 
+    else :
+        raise Illegal 
+
+
+class Illegal(Exception):
+    pass
 
 # Run script 
 
-def main(arg):
-    #build_db()
-    #correct()
-    #write_csv()
-    print("db successfully created")
+def main(user_arg, user_argtype):
+    build_db(user_arg, user_argtype)
+    correct()
+    write_csv()
+    print("Database successfully created")
