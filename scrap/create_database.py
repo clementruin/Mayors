@@ -167,13 +167,13 @@ def clean_party_attribute(string):
     ump = ["UMP", "Republicains", "LR"]
     dvd = ["DVD", "Divers Droite", "divers droite", "Divers droite"]
     udi = ["UDI", "Indep"]
-    eelv = ["EELV", "Ecologie", "ecologie"]
     modem = ["MoDem", "modem", "MODEM"]
+    prg = ["PRG", "Radical"]
+    eelv = ["EELV", "Ecologie", "ecologie"]
     dvg = ["DVG", "Divers Gauche", "divers gauche", "Divers gauche"]
     ps = ["PS", "Socialiste", "socialiste", "ps"]
     fg = ["FG", "fg", "Front de Gauche", "front de gauche", "Front de gauche"]
     pcf = ["PCF", "Communiste", "communiste"]
-    prg = ["PRG", "Radical"]
 
     if any(i in string for i in se):
         L.append("SE")
@@ -261,6 +261,9 @@ def correct():
 Base.metadata.create_all(engine)
 
 # Run script 
-build_db()
-correct()
-write_csv()
+
+def main(arg):
+    #build_db()
+    #correct()
+    #write_csv()
+    print("db successfully created")
