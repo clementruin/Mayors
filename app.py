@@ -23,13 +23,11 @@ def main():
     function = sys.argv[2]
     if len(sys.argv)>=4 :
         argument = sys.argv[4]
-        argtype = type(argument)
     else :
         argument = "None"
-        argtype = "None"
     assert function in ['init_database', 'populate', 'display','analyse'], \
            'Function is not one of init_database, populate, display or analyse: ' + function
-    process(function, argument, argtype)
+    process(function, argument)
 
 def type(arg):
     """Determines the type of argument : 
@@ -38,20 +36,24 @@ def type(arg):
     try :
         if int(arg) >= 1 and int(arg) <= 98:
             return 'dpt'
+        elif argument == "None":
+            return "None"
         elif int(arg) >= 1000 and int(arg) < 99000:
             return 'postal_code'
     except :
         return 'other'
 
 
-def process(function, argument, argtype):
+def process(function, argument):
     if function == 'init_database':
         init.main()
     elif function == 'populate':
+        argtype = type(argument)
         create_database.main(argument, argtype)
     elif function == 'display':
         print("Let me display ...")
     elif function == 'analyse':
-        analyse.builder()
+        analyse.main(argument)
+
 
 main()

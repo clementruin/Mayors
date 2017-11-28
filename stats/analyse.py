@@ -88,7 +88,7 @@ def builder():
                      "birthdate",
                      "first_mandate_date",
                      "party"])
-    df["population"] = df["population"].apply(pd.to_numeric)
+    #df["population"] = df["population"].apply(pd.to_numeric)
 
 
 def pop_per_party(range):
@@ -179,5 +179,12 @@ def party_vs_citysize2(df):
 #party_vs_citysize1(df)
 
 def main(arg):
+    assert arg in ['pop_per_party', 'party_vs_citysize1', 'party_vs_citysize2'], \
+           'Argument is not one of pop_per_party, party_vs_citysize1, party_vs_citysize2: ' + arg
     builder()
-    print("analyse")
+    if arg == "pop_per_party":
+        print("analyse " + arg)
+    if arg == "party_vs_citysize1":
+        print("analyse " + arg)
+    if arg == "party_vs_citysize2":
+        print("analyse " + arg)
