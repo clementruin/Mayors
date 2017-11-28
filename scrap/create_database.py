@@ -302,4 +302,5 @@ def main(user_arg, user_argtype):
     build_db(user_arg, user_argtype)
     correct()
     write_csv()
+    print(session.query(mairies).all())
     print("Database successfully created")

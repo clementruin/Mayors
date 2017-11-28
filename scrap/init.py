@@ -39,5 +39,3 @@ def main():
 	# Create a .csv file in /export/
 	new_file2 = open('export/database.csv', 'w')
 	new_file2.close()
-
-main()

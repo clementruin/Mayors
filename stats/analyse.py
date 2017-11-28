@@ -74,6 +74,7 @@ def data_frame(query, columns):
 
 # dataframe with all fields in the table
 def builder():
+    """
     query = session.query(Mairies).all()
     print(query)
     df = data_frame(query,
@@ -89,6 +90,9 @@ def builder():
                      "first_mandate_date",
                      "party"])
     #df["population"] = df["population"].apply(pd.to_numeric)
+    """
+    df = pd.DataFrame(session.query(mairies).all())
+    return df
 
 
 def pop_per_party(range):
@@ -181,9 +185,9 @@ def party_vs_citysize2(df):
 def main(arg):
     assert arg in ['pop_per_party', 'party_vs_citysize1', 'party_vs_citysize2'], \
            'Argument is not one of pop_per_party, party_vs_citysize1, party_vs_citysize2: ' + arg
-    builder()
+    df = builder()
     if arg == "pop_per_party":
-        print("analyse " + arg)
+        party_vs_citysize1(df)
     if arg == "party_vs_citysize1":
         print("analyse " + arg)
     if arg == "party_vs_citysize2":
