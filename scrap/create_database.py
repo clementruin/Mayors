@@ -294,6 +294,7 @@ def valid_answer(string):
 
 class Illegal(Exception):
     pass
+    
 
 # Run script 
 
