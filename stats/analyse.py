@@ -101,6 +101,7 @@ def pop_per_party(range):
     print(pop)
 
 def party_vs_citysize1(df):
+    print('Donne le nombre de mairies (%) en fonction de la taille de la ville')
     Sizes = [
         0,
         200,
@@ -138,6 +139,7 @@ def party_vs_citysize1(df):
 
 
 def party_vs_citysize2(df):
+    print('Donne le % de la population par partie en fonction de la taille de la ville')
     Sizes = [
         0,
         200,
