@@ -20,7 +20,6 @@ print ("Input argument: %s" % args.argument )
 def main():
     """Retrieves and assert user's input
     """
-    script = sys.argv[0]
     function = sys.argv[2]
     if len(sys.argv)>=4 :
         argument = sys.argv[4]
