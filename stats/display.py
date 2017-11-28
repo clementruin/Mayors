@@ -17,20 +17,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-color = dict()
-color['PCF'] = "#800000"
-color['FG'] = "#800000"
-color['PS'] = "#FF0000"
-color['DVG'] = "#FF6564"
-color['PRG'] = "#F79295"
-color['EELV'] = "#1DCD40"
-color['MoDem'] = "#9F66C2"
-color['UDI'] = "#9F66C2"
-color['DVD'] = "#9EA0FF"
-color['UMP-LR'] = "#0000FF"
-color['FN'] = "#000080"
-color['NA'] = "#000000"
-color['SE'] = "#E8ECC1"
+dump_database = "static/database.db"
+
 
 class Mairies():
     __tablename__ = 'mairies'
@@ -57,29 +45,46 @@ mapper(Mairies,mairies)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-def data_frame(query, columns):
-    """Takes a sqlalchemy query and a list of columns, returns a dataframe.
-    """
-    def make_row(x):
-        return dict([(c, getattr(x, c)) for c in columns])
-    return pd.DataFrame([make_row(x) for x in query])
+df = pd.DataFrame(session.query(mairies).all())
 
+color = dict()
+color['PCF'] = "#DA1016"
+color['FG'] = "#DA1016"
+color['PS'] = "#F79295"
+color['DVG'] = "#F79295"
+color['PRG'] = "#F79295"
+color['EELV'] = "#1DCD40"
+color['MoDem'] = "#9F66C2"
+color['UDI'] = "#9F66C2"
+color['DVD'] = "#3ECBF9"
+color['UMP-LR'] = "#3ECBF9"
+color['FN'] = "#3334E1"
+color['NA'] = "#D8D8F3"
+color['SE'] = "#E8ECC1"
 
-# dataframe with all fields in the table
-def builder():
-    query = session.query(Mairies).all()
-    print(query)
-    df = data_frame(query,
-                    ["insee_code",
-                     "postal_code",
-                     "city",
-                     "population",
-                     "latitude",
-                     "longitude",
-                     "last_name",
-                     "first_name",
-                     "birthdate",
-                     "first_mandate_date",
-                     "party"])
-    df["population"] = df["population"].apply(pd.to_numeric)
+def city_map():
+    Latitudes = df.as_matrix(columns=df.columns[4:5])
+    Longitudes = df.as_matrix(columns=df.columns[5:6])
+    Partys = df.as_matrix(columns=df.columns[10:11])
 
+    fig, ax = plt.subplots()
+    for i in range(0, len(Latitudes)):
+        if Latitudes[i][0] == "None":
+            latitude = (-np.cos(48.8 * np.pi / 180))
+        else:
+            latitude = -np.cos(float(Latitudes[i][0]) * np.pi / 180)
+
+        if Longitudes[i][0] == "None":
+            longitude = np.sin(2.02 * np.pi / 180)
+        else:
+            longitude = np.sin(float(Longitudes[i][0]) * np.pi / 180)
+
+        colour = color[Partys[i][0]]
+
+        ax.scatter(longitude, latitude, c=colour, alpha=0.8, edgecolors='none')
+
+    plt.show()
+
+df.columns[4:5]
+df.columns[5:6]
+df.columns[10:11]
