@@ -10,19 +10,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-f','--function', help='Input function',required=True)
 parser.add_argument('-a','--argument',help='Output argument', required=False)
 args = parser.parse_args()
- 
-""" 
-# Show values
-print ("Input function: %s" % args.function )
-print ("Input argument: %s" % args.argument )
-"""
 
 def main():
     """Retrieves and assert user's input
     """
-    function = sys.argv[2]
+    function = args.function
     if len(sys.argv)>=4 :
-        argument = sys.argv[4]
+        argument = args.argument
     else :
         argument = "None"
     assert function in ['init_database', 'populate', 'display','analyse'], \
@@ -36,7 +30,7 @@ def type(arg):
     try :
         if int(arg) >= 1 and int(arg) <= 98:
             return 'dpt'
-        elif argument == "None":
+        elif arg == "None":
             return "None"
         elif int(arg) >= 1000 and int(arg) < 99000:
             return 'postal_code'
@@ -51,9 +45,10 @@ def process(function, argument):
         argtype = type(argument)
         create_database.main(argument, argtype)
     elif function == 'display':
-        print("Let me display ...")
+        display.city_map()
     elif function == 'analyse':
         analyse.main(argument)
 
 
-main()
+if __name__ == '__main__':
+    main()

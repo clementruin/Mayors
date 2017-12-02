@@ -54,19 +54,19 @@ class TableError(Exception):
 
 # Link insee_code with postal_code and coordinates 
 
-dict = {}
+code_converter = {}
 outfile = open('static/code_postaux_insee.csv', 'r')
 reader = csv.DictReader(outfile, delimiter=';')
 for line in reader:
-    dict[line["Code_commune_INSEE"]] = [
+    code_converter[line["Code_commune_INSEE"]] = [
         line["Code_postal"], line["coordonnees_gps"]]
 
 
 def get_dict(code):
     try:
-        return (dict[code][0],
-                dict[code][1].split(',')[0],
-                dict[code][1].split(', ')[1])
+        return (code_converter[code][0],
+                code_converter[code][1].split(',')[0],
+                code_converter[code][1].split(', ')[1])
     except BaseException:
         return ("None", "None", "None")
 
@@ -302,5 +302,4 @@ def main(user_arg, user_argtype):
     build_db(user_arg, user_argtype)
     correct()
     write_csv()
-    print(session.query(mairies).all())
     print("Database successfully created")
