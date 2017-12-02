@@ -6,10 +6,12 @@ import scrap.create_database as create_database
 import stats.display as display
 import stats.analyse as analyse
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-f','--function', help='Input function',required=True)
 parser.add_argument('-a','--argument',help='Output argument', required=False)
 args = parser.parse_args()
+
 
 def main():
     """Retrieves and assert user's input
@@ -23,19 +25,20 @@ def main():
            'Function is not one of init_database, populate, display or analyse: ' + function
     process(function, argument)
 
+
 def type(arg):
     """Determines the type of argument : 
     Did the user type a department number, city, or postal code?
     """
     try :
         if int(arg) >= 1 and int(arg) <= 98:
-            return 'dpt'
+            return "dpt"
         elif arg == "None":
             return "None"
         elif int(arg) >= 1000 and int(arg) < 99000:
-            return 'postal_code'
+            return "postal_code"
     except :
-        return 'other'
+        return "other"
 
 
 def process(function, argument):
@@ -45,7 +48,8 @@ def process(function, argument):
         argtype = type(argument)
         create_database.main(argument, argtype)
     elif function == 'display':
-        display.city_map()
+        argtype = type(argument)
+        display.main(argument, argtype)
     elif function == 'analyse':
         analyse.main(argument)
 

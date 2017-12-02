@@ -16,6 +16,7 @@ from fuzzywuzzy import process
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from scrap.base import *
 
 
 ######### Input #########
@@ -38,65 +39,47 @@ color['NA'] = "#000000"
 color['SE'] = "#E8ECC1"
 
 
-class Mairies():
-    __tablename__ = 'mairies'
-    __table_args__ = {'autoload':True}
-
-    def __init__(self, insee_code, postal_code, city, population, latitude, longitude, first_name, last_name, birthdate, first_mandate_date, party):
-        self.insee_code = insee_code
-        self.postal_code = postal_code
-        self.city = city
-        self.population = population
-        self.latitude = latitude
-        self.longitude = longitude
-        self.first_name = first_name
-        self.last_name = last_name
-        self.birthdate = birthdate
-        self.first_mandate_date = first_mandate_date
-        self.party = party
-
-
 engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
-metadata = MetaData(engine)
-mairies = Table('mairies', metadata, autoload=True)
-mapper(Mairies,mairies)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def data_frame(query, columns):
-    """Takes a sqlalchemy query and a list of columns, returns a dataframe.
-    """
-    def make_row(x):
-        return dict([(c, getattr(x, c)) for c in columns])
-    return pd.DataFrame([make_row(x) for x in query])
-
-
-# dataframe with all fields in the table
 def builder():
+    """Build panda statframe
     """
-    query = session.query(Mairies).all()
-    print(query)
-    df = data_frame(query,
-                    ["insee_code",
-                     "postal_code",
-                     "city",
-                     "population",
-                     "latitude",
-                     "longitude",
-                     "last_name",
-                     "first_name",
-                     "birthdate",
-                     "first_mandate_date",
-                     "party"])
-    #df["population"] = df["population"].apply(pd.to_numeric)
-    """
-    df = pd.DataFrame(session.query(mairies).all())
+    df = pd.DataFrame(session.query(Mairies.__table__).all())
     return df
 
 
-def pop_per_party(range):
-    # population under each party
+def city_map(df):
+    """Draw map of the cities with the color of their party
+    """
+    Latitudes = df.as_matrix(columns=df.columns[4:5])
+    Longitudes = df.as_matrix(columns=df.columns[5:6])
+    Partys = df.as_matrix(columns=df.columns[10:11])
+
+    fig, ax = plt.subplots()
+    for i in range(0, len(Latitudes)):
+        if Latitudes[i][0] == "None":
+            latitude = (-np.cos(48.8 * np.pi / 180))
+        else:
+            latitude = -np.cos(float(Latitudes[i][0]) * np.pi / 180)
+
+        if Longitudes[i][0] == "None":
+            longitude = np.sin(2.02 * np.pi / 180)
+        else:
+            longitude = np.sin(float(Longitudes[i][0]) * np.pi / 180)
+
+        colour = color[Partys[i][0]]
+
+        ax.scatter(longitude, latitude, c=colour, alpha=0.8, edgecolors='none')
+
+    plt.show()
+
+
+def pop_per_party(range,df):
+    """population under each party
+    """
     pop = df.loc[:, ['population', 'party', 'city']]
     pop = pop[pop.population >= range[0]][pop.population <=
                                           range[1]].groupby("party").sum().sort_values("population")
@@ -183,12 +166,14 @@ def party_vs_citysize2(df):
 #party_vs_citysize1(df)
 
 def main(arg):
-    assert arg in ['pop_per_party', 'party_vs_citysize1', 'party_vs_citysize2'], \
-           'Argument is not one of pop_per_party, party_vs_citysize1, party_vs_citysize2: ' + arg
+    assert arg in ['pop_per_party', 'party_vs_citysize1', 'party_vs_citysize2','city_map'], \
+           'Argument is not one of pop_per_party, party_vs_citysize1, party_vs_citysize2, city_map: ' + arg
     df = builder()
     if arg == "pop_per_party":
-        party_vs_citysize1(df)
+        pop_per_party([0,10000000],df)
     if arg == "party_vs_citysize1":
-        print("analyse " + arg)
+        party_vs_citysize1(df)
     if arg == "party_vs_citysize2":
-        print("analyse " + arg)
+        party_vs_citysize2(df)
+    if arg == "city_map":
+        city_map(df)

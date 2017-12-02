@@ -12,6 +12,7 @@ import unidecode
 import re
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+from scrap.base import *
 
 
 ######### Input #########
@@ -21,33 +22,13 @@ dump_database_csv = "export/database.csv"
 #########################
 
 
-# Retrieve table "mairies"
-
-class Mairies():
-    __tablename__ = 'mairies'
-    __table_args__ = {'autoload':True}
-
-    def __init__(self, insee_code, postal_code, city, population, latitude, longitude, first_name, last_name, birthdate, first_mandate_date, party):
-        self.insee_code = insee_code
-        self.postal_code = postal_code
-        self.city = city
-        self.population = population
-        self.latitude = latitude
-        self.longitude = longitude
-        self.first_name = first_name
-        self.last_name = last_name
-        self.birthdate = birthdate
-        self.first_mandate_date = first_mandate_date
-        self.party = party
-
-
-engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
-metadata = MetaData(engine)
-mairies = Table('mairies', metadata, autoload=True)
-mapper(Mairies,mairies)
-Session = sessionmaker(bind=engine)
-session = Session()
-
+def load_session():
+    """Connect with table mairies
+    """
+    engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    return session
 
 class TableError(Exception):
     pass
@@ -87,6 +68,7 @@ def build_db(user_arg, user_argtype):
     """Retrieves data from the source_database and scraping function. 
     Creates rows in the Mairies table 
     """
+    session = load_session()
     outfile = open(source_database, 'r')
     reader = csv.DictReader(outfile, delimiter=';')
     for line in reader:
@@ -108,7 +90,7 @@ def build_db(user_arg, user_argtype):
                 birthdate=line["naissance"],
                 first_mandate_date=scrap[0],
                 party=scrap[1])
-            session.merge(new_mayor)
+            session.add(new_mayor)
     session.commit()
     outfile.close()
 
@@ -240,7 +222,7 @@ def write_csv():
     records = session.query(Mairies).all()
     session.commit()
     [outcsv.writerow([getattr(curr, column.name)
-                      for column in mairies.columns]) for curr in records]
+                      for column in Mairies.__table__.columns]) for curr in records]
     outfile.close()
 
 # Correction for cities with undefined party

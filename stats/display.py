@@ -16,36 +16,10 @@ from fuzzywuzzy import process
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from scrap.base import *
+
 
 dump_database = "static/database.db"
-
-
-class Mairies():
-    __tablename__ = 'mairies'
-    __table_args__ = {'autoload':True}
-
-    def __init__(self, insee_code, postal_code, city, population, latitude, longitude, first_name, last_name, birthdate, first_mandate_date, party):
-        self.insee_code = insee_code
-        self.postal_code = postal_code
-        self.city = city
-        self.population = population
-        self.latitude = latitude
-        self.longitude = longitude
-        self.first_name = first_name
-        self.last_name = last_name
-        self.birthdate = birthdate
-        self.first_mandate_date = first_mandate_date
-        self.party = party
-
-
-engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
-metadata = MetaData(engine)
-mairies = Table('mairies', metadata, autoload=True)
-mapper(Mairies,mairies)
-Session = sessionmaker(bind=engine)
-session = Session()
-
-df = pd.DataFrame(session.query(mairies).all())
 
 color = dict()
 color['PCF'] = "#DA1016"
@@ -85,3 +59,18 @@ def city_map():
 
     plt.show()
 
+def main(arg, argtype):
+    engine = create_engine('sqlite:///{}'.format(dump_database), echo=False)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    df = pd.DataFrame(session.query(Mairies.__table__).all())
+    df[["postal_code", "city"]] = df[["postal_code", "city"]].astype(str) 
+
+    if argtype == "dpt" :
+        df = df[df['postal_code'].str.match(arg)]
+    elif argtype == "postal_code":
+        df = df[df['postal_code'].str.match(arg)]
+    else :
+        df = df[df['city'].str.match(arg)]
+    print(df)
