@@ -30,10 +30,12 @@ def load_session():
     session = Session()
     return session
 
+
 class TableError(Exception):
     pass
 
-# Link insee_code with postal_code and coordinates 
+# Link insee_code with postal_code and coordinates
+
 
 code_converter = {}
 outfile = open('static/code_postaux_insee.csv', 'r')
@@ -53,20 +55,20 @@ def get_dict(code):
 
 
 def no_accent(string):
-    string = string.replace('é','e')
-    string = string.replace('è','e')
-    string = string.replace('ë','e')
-    string = string.replace('ï','i')
-    string = string.replace('É','e')
-    string = string.replace('È','e')
+    string = string.replace('é', 'e')
+    string = string.replace('è', 'e')
+    string = string.replace('ë', 'e')
+    string = string.replace('ï', 'i')
+    string = string.replace('É', 'e')
+    string = string.replace('È', 'e')
     return string
 
 
-# Populate table 
+# Populate table
 
 def build_db(user_arg, user_argtype):
-    """Retrieves data from the source_database and scraping function. 
-    Creates rows in the Mairies table 
+    """Retrieves data from the source_database and scraping function.
+    Creates rows in the Mairies table
     """
     session = load_session()
     outfile = open(source_database, 'r')
@@ -80,16 +82,16 @@ def build_db(user_arg, user_argtype):
                 line["prepsn"],
                 line["nompsn"])
             print(line["codeinsee"])
-            new_mayor = Mairies(insee_code= line["codeinsee"],
-                postal_code=get[0],
-                city=line["libsubcom"],
-                population=int(line["popsubcom"]),
-                latitude=get[1],longitude=get[2],
-                first_name=line["prepsn"],
-                last_name=line["nompsn"],
-                birthdate=line["naissance"],
-                first_mandate_date=scrap[0],
-                party=scrap[1])
+            new_mayor = Mairies(insee_code=line["codeinsee"],
+                                postal_code=get[0],
+                                city=line["libsubcom"],
+                                population=int(line["popsubcom"]),
+                                latitude=get[1], longitude=get[2],
+                                first_name=line["prepsn"],
+                                last_name=line["nompsn"],
+                                birthdate=line["naissance"],
+                                first_mandate_date=scrap[0],
+                                party=scrap[1])
             session.add(new_mayor)
     session.commit()
     outfile.close()
@@ -103,7 +105,7 @@ def useful_line(postal_code, city, user_arg, user_argtype):
         return user_arg == postal_code[:-3]
     elif user_argtype == 'postal_code':
         return user_arg == postal_code
-    else :
+    else:
         return user_arg == city
 
 
@@ -112,7 +114,7 @@ def scrap_party_date(postal_code, city, first_name, last_name):
     Wikitable, available on every french city's Wikipedia page
     """
     try:
-        # open Wiki page of the city 
+        # open Wiki page of the city
         city = unidecode.unidecode(city)
         url = "https://www.google.fr/search?q={}+{}+{}".format(
             'wikipedia', city, postal_code)
@@ -133,18 +135,21 @@ def scrap_party_date(postal_code, city, first_name, last_name):
                 L = row.find_all("td")
                 if len(L) > 2:
                     data.append([ele.text for ele in L])
-        # first date and party search 
+        # first date and party search
         min_date = 4000
         min_index = None
         for i in range(len(data)):
-            if fuzz.token_sort_ratio(no_accent(data[i][2]), no_accent(first_name +" "+last_name)) > 80:
+            if fuzz.token_sort_ratio(
+                no_accent(
+                    data[i][2]), no_accent(
+                    first_name + " " + last_name)) > 80:
                 curr_date = re.search(r"(\d{4})", data[i][0]).group(1)
                 if int(curr_date) < min_date:
                     min_date = int(curr_date)
                     min_index = i
-        if min_index == None:
+        if min_index is None:
             raise TableError()
-        else :
+        else:
             date = re.search(r"(\d{4})", data[min_index][0]).group(1)
             party = data[min_index][3]
             return (date, clean_party_attribute(party))
@@ -203,7 +208,7 @@ def clean_party_attribute(string):
         return L[-1]
 
 
-# Create a .csv file for the .db created 
+# Create a .csv file for the .db created
 
 def write_csv():
     outfile = open(dump_database_csv, 'w')
@@ -227,6 +232,7 @@ def write_csv():
 
 # Correction for cities with undefined party
 
+
 def party_correction(insee_code, city):
     """Scraps LeMonde.fr in the "Les Élus" section of the city's page.
     Request "Le monde city insee_code" in Google to access the page
@@ -248,16 +254,19 @@ def party_correction(insee_code, city):
     except BaseException:
         return "NA"
 
+
 def correct():
     rows = session.query(Mairies).filter(Mairies.party == "NA").all()
     count = session.query(Mairies).filter(Mairies.party == "NA").count()
     print("{} cities with undefined party".format(count))
-    while count>0:
-        answer = input("Do you want to try a potentially long correction? (yes/no) : ")
+    while count > 0:
+        answer = input(
+            "Do you want to try a potentially long correction? (yes/no) : ")
         try:
             if valid_answer(answer):
-                for row in rows :
-                    row.party = clean_party_attribute(party_correction(row.insee_code, row.city))
+                for row in rows:
+                    row.party = clean_party_attribute(
+                        party_correction(row.insee_code, row.city))
                     print(row.city, row.party, row.population)
             break
         except Illegal:
@@ -269,16 +278,16 @@ def valid_answer(string):
     if string == "yes":
         return True
     elif string == "no":
-        return False 
-    else :
-        raise Illegal 
+        return False
+    else:
+        raise Illegal
 
 
 class Illegal(Exception):
     pass
-    
 
-# Run script 
+
+# Run script
 
 def main(user_arg, user_argtype):
     build_db(user_arg, user_argtype)

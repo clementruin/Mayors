@@ -77,7 +77,7 @@ def city_map(df):
     plt.show()
 
 
-def pop_per_party(range,df):
+def pop_per_party(range, df):
     """population under each party
     """
     pop = df.loc[:, ['population', 'party', 'city']]
@@ -86,6 +86,7 @@ def pop_per_party(range,df):
     total_pop = pop['population'].sum()
     pop["percentage"] = pop["population"].apply(lambda x: x / total_pop * 100)
     print(pop)
+
 
 def party_vs_citysize1(df):
     Sizes = [
@@ -105,12 +106,14 @@ def party_vs_citysize1(df):
     colors = [color[p] for p in Parties]
     n = len(Sizes)
     A = []
-    df_pop = df.loc[:, ['city', 'party','population']]
-    for k in range(0,len(Sizes)-1):
+    df_pop = df.loc[:, ['city', 'party', 'population']]
+    for k in range(0, len(Sizes) - 1):
         L = []
-        total_mairies = df_pop['city'][df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]].count()
+        total_mairies = df_pop['city'][df_pop.population >=
+                                       Sizes[k]][df_pop.population < Sizes[k + 1]].count()
         for p in Parties:
-            n_pop = df_pop[df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]][df_pop.party == p]
+            n_pop = df_pop[df_pop.population >= Sizes[k]
+                           ][df_pop.population < Sizes[k + 1]][df_pop.party == p]
             n_pop = n_pop['city'].count() / total_mairies * 100
             L.append(n_pop)
         A.append(L)
@@ -143,11 +146,13 @@ def party_vs_citysize2(df):
     n = len(Sizes)
     A = []
     df_pop = df.loc[:, ['population', 'party']]
-    for k in range(0,len(Sizes)-1):
+    for k in range(0, len(Sizes) - 1):
         L = []
-        total_pop = df_pop['population'][df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]].sum()
+        total_pop = df_pop['population'][df_pop.population >=
+                                         Sizes[k]][df_pop.population < Sizes[k + 1]].sum()
         for p in Parties:
-            n_pop = df_pop[df_pop.population >= Sizes[k]][df_pop.population < Sizes[k+1]][df_pop.party == p]
+            n_pop = df_pop[df_pop.population >= Sizes[k]
+                           ][df_pop.population < Sizes[k + 1]][df_pop.party == p]
             n_pop = n_pop['population'].sum() / total_pop * 100
             L.append(n_pop)
         A.append(L)
@@ -162,15 +167,15 @@ def party_vs_citysize2(df):
 
 #----- main -----#
 #population_threshold = [0, 1000000]
-#pop_per_party(population_threshold)
-#party_vs_citysize1(df)
+# pop_per_party(population_threshold)
+# party_vs_citysize1(df)
 
 def main(arg):
-    assert arg in ['pop_per_party', 'party_vs_citysize1', 'party_vs_citysize2','city_map'], \
-           'Argument is not one of pop_per_party, party_vs_citysize1, party_vs_citysize2, city_map: ' + arg
+    assert arg in ['pop_per_party', 'party_vs_citysize1', 'party_vs_citysize2', 'city_map'], \
+        'Argument is not one of pop_per_party, party_vs_citysize1, party_vs_citysize2, city_map: ' + arg
     df = builder()
     if arg == "pop_per_party":
-        pop_per_party([0,10000000],df)
+        pop_per_party([0, 10000000], df)
     if arg == "party_vs_citysize1":
         party_vs_citysize1(df)
     if arg == "party_vs_citysize2":
