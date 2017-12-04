@@ -1,9 +1,6 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Date
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import MetaData, Table
-from sqlalchemy.orm import mapper
 from scrap.base import *
 
 dump_database = "static/database.db"

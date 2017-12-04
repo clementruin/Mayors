@@ -1,18 +1,7 @@
 import pandas as pd
 import sqlalchemy
-import csv
-import requests
-from bs4 import BeautifulSoup
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Date
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import MetaData, Table
-from sqlalchemy.orm import mapper
-import re
-import unidecode
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -88,7 +77,9 @@ def pop_per_party(range, df):
     print(pop)
 
 
-def party_vs_citysize1(df):
+def dist_cities_vs_party(df):
+    """graph of the distribultion of city halls under each party for different city sizes
+    """
     Sizes = [
         0,
         200,
@@ -102,7 +93,7 @@ def party_vs_citysize1(df):
         300000,
         1000000,
         2000000]
-    Parties = ["UMP-LR", "PS", "DVD", "NA", "DVG", "SE"]
+    Parties = ["FN","UMP-LR", "DVD", "UDI", "MoDem", "SE", "EELV", "PRG", "DVG", "PS", "FG", "PCF", "NA"]
     colors = [color[p] for p in Parties]
     n = len(Sizes)
     A = []
@@ -112,22 +103,25 @@ def party_vs_citysize1(df):
         total_mairies = df_pop['city'][df_pop.population >=
                                        Sizes[k]][df_pop.population < Sizes[k + 1]].count()
         for p in Parties:
-            n_pop = df_pop[df_pop.population >= Sizes[k]
-                           ][df_pop.population < Sizes[k + 1]][df_pop.party == p]
-            n_pop = n_pop['city'].count() / total_mairies * 100
+            n_pop = df_pop[(df_pop.population >= Sizes[k]) & (df_pop.population < Sizes[k + 1]) & (df_pop.party == p)]
+            n_pop = n_pop['city'].count() *100 / total_mairies
             L.append(n_pop)
         A.append(L)
 
-    df = pd.DataFrame(A, index=Sizes[:-1], columns=Parties)
+    df = pd.DataFrame(A, index=["0-200", "200-600", "600-1000", "1000-5000", "5000-10000", "10000-30000", "30000-70000", "70000-100000", "100000-300000", "300000-1000000", "1000000-2000000"], columns=Parties)
     df.plot.bar(color=colors)
+    plt.gca().yaxis.grid(True, linestyle='dashed')
     plt.xticks(rotation=0)
-    plt.title("Parties VS city size")
+    plt.title("Mairies sous chaque parti, selon les tailles de villes")
     plt.xlabel("taille des villes")
+    plt.xticks(rotation=45)
     plt.ylabel("nombre de mairies (%)")
     plt.show()
 
 
-def party_vs_citysize2(df):
+def dist_pop_vs_party(df):
+    """graph of the distribultion of population under each party for different city sizes
+    """
     Sizes = [
         0,
         200,
@@ -141,7 +135,7 @@ def party_vs_citysize2(df):
         300000,
         1000000,
         2000000]
-    Parties = ["UMP-LR", "PS", "DVD", "NA", "DVG", "SE"]
+    Parties = ["FN","UMP-LR", "DVD", "UDI", "MoDem", "SE", "EELV", "PRG", "DVG", "PS", "FG", "PCF", "NA"]
     colors = [color[p] for p in Parties]
     n = len(Sizes)
     A = []
@@ -151,34 +145,32 @@ def party_vs_citysize2(df):
         total_pop = df_pop['population'][df_pop.population >=
                                          Sizes[k]][df_pop.population < Sizes[k + 1]].sum()
         for p in Parties:
-            n_pop = df_pop[df_pop.population >= Sizes[k]
-                           ][df_pop.population < Sizes[k + 1]][df_pop.party == p]
+            n_pop = df_pop[(df_pop.population >= Sizes[k])
+                           & (df_pop.population < Sizes[k + 1]) 
+                           & (df_pop.party == p)]
             n_pop = n_pop['population'].sum() / total_pop * 100
             L.append(n_pop)
         A.append(L)
-    df = pd.DataFrame(A, index=Sizes[:-1], columns=Parties)
+    #df = pd.DataFrame(A, index=Sizes[:-1], columns=Parties)
+    df = pd.DataFrame(A, index=["0-200", "200-600", "600-1000", "1000-5000", "5000-10000", "10000-30000", "30000-70000", "70000-100000", "100000-300000", "300000-1000000", "1000000-2000000"], columns=Parties)
     df.plot.bar(color=colors)
-    plt.xticks(rotation=0)
-    plt.title("Parties VS city size")
+    plt.gca().yaxis.grid(True, linestyle='dashed')
+    plt.xticks(rotation=45)
+    plt.title("Population sous chaque parti, selon les tailles de villes")
     plt.xlabel("taille des villes")
     plt.ylabel("pourcentage de la population par parti")
     plt.show()
 
 
-#----- main -----#
-#population_threshold = [0, 1000000]
-# pop_per_party(population_threshold)
-# party_vs_citysize1(df)
-
 def main(arg):
-    assert arg in ['pop_per_party', 'party_vs_citysize1', 'party_vs_citysize2', 'city_map'], \
-        'Argument is not one of pop_per_party, party_vs_citysize1, party_vs_citysize2, city_map: ' + arg
+    assert arg in ['pop_per_party', 'dist_cities_vs_party', 'dist_pop_vs_party', 'city_map'], \
+        'Argument is not one of pop_per_party, dist_cities_vs_party, dist_pop_vs_party, city_map: ' + arg
     df = builder()
     if arg == "pop_per_party":
         pop_per_party([0, 10000000], df)
-    if arg == "party_vs_citysize1":
-        party_vs_citysize1(df)
-    if arg == "party_vs_citysize2":
-        party_vs_citysize2(df)
+    if arg == "dist_cities_vs_party":
+        dist_cities_vs_party(df)
+    if arg == "dist_pop_vs_party":
+        dist_pop_vs_party(df)
     if arg == "city_map":
         city_map(df)
