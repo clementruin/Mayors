@@ -93,7 +93,20 @@ def dist_cities_vs_party(df):
         300000,
         1000000,
         2000000]
-    Parties = ["FN","UMP-LR", "DVD", "UDI", "MoDem", "SE", "EELV", "PRG", "DVG", "PS", "FG", "PCF", "NA"]
+    Parties = [
+        "FN",
+        "UMP-LR",
+        "DVD",
+        "UDI",
+        "MoDem",
+        "SE",
+        "EELV",
+        "PRG",
+        "DVG",
+        "PS",
+        "FG",
+        "PCF",
+        "NA"]
     colors = [color[p] for p in Parties]
     n = len(Sizes)
     A = []
@@ -103,12 +116,27 @@ def dist_cities_vs_party(df):
         total_mairies = df_pop['city'][df_pop.population >=
                                        Sizes[k]][df_pop.population < Sizes[k + 1]].count()
         for p in Parties:
-            n_pop = df_pop[(df_pop.population >= Sizes[k]) & (df_pop.population < Sizes[k + 1]) & (df_pop.party == p)]
-            n_pop = n_pop['city'].count() *100 / total_mairies
+            n_pop = df_pop[(df_pop.population >= Sizes[k]) & (
+                df_pop.population < Sizes[k + 1]) & (df_pop.party == p)]
+            n_pop = n_pop['city'].count() * 100 / total_mairies
             L.append(n_pop)
         A.append(L)
 
-    df = pd.DataFrame(A, index=["0-200", "200-600", "600-1000", "1000-5000", "5000-10000", "10000-30000", "30000-70000", "70000-100000", "100000-300000", "300000-1000000", "1000000-2000000"], columns=Parties)
+    df = pd.DataFrame(
+        A,
+        index=[
+            "0-200",
+            "200-600",
+            "600-1000",
+            "1000-5000",
+            "5000-10000",
+            "10000-30000",
+            "30000-70000",
+            "70000-100000",
+            "100000-300000",
+            "300000-1000000",
+            "1000000-2000000"],
+        columns=Parties)
     df.plot.bar(color=colors)
     plt.gca().yaxis.grid(True, linestyle='dashed')
     plt.xticks(rotation=0)
@@ -135,7 +163,20 @@ def dist_pop_vs_party(df):
         300000,
         1000000,
         2000000]
-    Parties = ["FN","UMP-LR", "DVD", "UDI", "MoDem", "SE", "EELV", "PRG", "DVG", "PS", "FG", "PCF", "NA"]
+    Parties = [
+        "FN",
+        "UMP-LR",
+        "DVD",
+        "UDI",
+        "MoDem",
+        "SE",
+        "EELV",
+        "PRG",
+        "DVG",
+        "PS",
+        "FG",
+        "PCF",
+        "NA"]
     colors = [color[p] for p in Parties]
     n = len(Sizes)
     A = []
@@ -146,13 +187,27 @@ def dist_pop_vs_party(df):
                                          Sizes[k]][df_pop.population < Sizes[k + 1]].sum()
         for p in Parties:
             n_pop = df_pop[(df_pop.population >= Sizes[k])
-                           & (df_pop.population < Sizes[k + 1]) 
+                           & (df_pop.population < Sizes[k + 1])
                            & (df_pop.party == p)]
             n_pop = n_pop['population'].sum() / total_pop * 100
             L.append(n_pop)
         A.append(L)
     #df = pd.DataFrame(A, index=Sizes[:-1], columns=Parties)
-    df = pd.DataFrame(A, index=["0-200", "200-600", "600-1000", "1000-5000", "5000-10000", "10000-30000", "30000-70000", "70000-100000", "100000-300000", "300000-1000000", "1000000-2000000"], columns=Parties)
+    df = pd.DataFrame(
+        A,
+        index=[
+            "0-200",
+            "200-600",
+            "600-1000",
+            "1000-5000",
+            "5000-10000",
+            "10000-30000",
+            "30000-70000",
+            "70000-100000",
+            "100000-300000",
+            "300000-1000000",
+            "1000000-2000000"],
+        columns=Parties)
     df.plot.bar(color=colors)
     plt.gca().yaxis.grid(True, linestyle='dashed')
     plt.xticks(rotation=45)
