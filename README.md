@@ -11,7 +11,7 @@ These instructions will get you a copy of the project up and running on your loc
 What packages you need to install to run the application
 
 ```
-- sqlalchemy	- unidecode
+- sqlalchemy		- unidecode
 - numpy			- re
 - bs4			- fuzzywuzzy
 - requests		- pandas 
@@ -53,8 +53,8 @@ Choose one of the 4 functions :
 	* arguments :
 		- city_map : draws a map of your requested cities, with the color of their party
 		- pop_per_party : prints in the terminal the distribution of parties in the database 
-		-
-		-
+		- dist_cities_vs_party : graph of the distribultion of city halls under each party for different city sizes 
+ 		- dist_pop_vs_party : graph of the distribultion of population under each party for different city sizes
 
 
 Look at an example :
@@ -64,8 +64,10 @@ python3 app.py -f init_database
 python3 app.py -f populate -a 92
 python3 app.py -f display -a 92
 python3 app.py -f display -a Antony
-python3 app.py -f analyse -a 
+python3 app.py -f analyse -a pop_per_party
 ```
+
+Before you start populating a new database, *don't forget to init_database* 
 
 ## Output
 
